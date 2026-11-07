@@ -53,4 +53,5 @@ const hold = () => { if (state.phase === 'playing') paused = true; };
 addEventListener('blur', hold);
 document.addEventListener('visibilitychange', () => (document.hidden ? (hold(), loop.stop()) : loop.start()));
 loop.start();
-canvas.focus();
+// Framed, Folio focuses the frame itself: a sandboxed frame may not take focus on its own.
+if (!embedded) canvas.focus();
