@@ -4,11 +4,9 @@ A starting point for small browser games that show up on [Folio](https://oztozlu
 
 ## Start a game
 
-1. **Use this template** on GitHub to create a new public repository, for example `orbit`.
-2. Rename the game in three places: `name` in `package.json`, `name` in `wrangler.jsonc` and the `<title>` in `index.html`.
-3. Replace `src/game/gates.ts` with your game, and its texts in `src/main.ts`. Keep the shape: a `State`, a pure `step(state, controls, dt, random)` and a `render(...)`.
-4. Fill in `.github/folio.yaml` (below).
-5. Deploy (below), then set the repository's **homepage** to the game's address and add the **`folio-play`** topic. Folio lists the game at its next build: at most six hours, or at once with *Run workflow* on Folio's Production workflow.
+1. **Use this template** on GitHub and name the repository; the name becomes its address (`<name>.oztozlu.dev`) unless `folio.yaml` sets `name`. The repository may be public or private.
+2. Rename it in `package.json` and the `<title>` in `index.html`, write your game (below) and fill in `folio.yaml`.
+3. Push to `main`. The Folio controller builds it, publishes it at its address and adds it to Folio's `/play` page; every later push updates it. No secrets, topics, DNS or Cloudflare settings: the first commit made by "Use this template" is picked up within 15 minutes, every push within a minute or two.
 
 ```sh
 pnpm install
@@ -32,40 +30,31 @@ Requires Node 26 (`.node-version`) and pnpm 12.
 
 A round pauses itself when the tab is hidden or the window loses focus.
 
-## How Folio shows it
+## How it is published
 
-`/play` lists every public repository of the owner with the `folio-play` topic and an https homepage. Each game gets a page, `/play/<repository-name>`, that runs it in a frame when the visitor asks, with *Full screen* and *Open in a new tab*. Without JavaScript, the same button opens the game in a new tab.
+`folio.yaml` is the only setting:
 
-`.github/folio.yaml` (every field optional):
+```yaml
+kind: play
+access: public            # games must be public to be listed on Folio
+name: my-game            # optional: its address, my-game.oztozlu.dev
+title: { en: …, tr: … }  # English falls back to the repository name
+summary: { en: …, tr: … }
+order: 1                  # earlier on /play; the rest newest first
+embed: true               # false: Folio links to it instead of running it in the page
+aspect: "16:10"           # the frame's shape on Folio (default 16:9)
+inputs: [keyboard, touch, gamepad, mouse]   # shown on its Folio page
+```
 
-| Field | Meaning |
-| --- | --- |
-| `title`, `summary` | `{ en, tr }`. English falls back to the repository name and description. |
-| `order` | Games with one come first, in that order; the rest by last push. |
-| `embed` | `false` to link to the game instead of framing it. |
-| `embedOptions.aspect` | The frame's shape, like `"16:10"` (default `16:9`). |
-| `embedOptions.orientation` | `landscape`, `portrait` or `any`. |
-| `embedOptions.input` | Shown on the game's page: `keyboard`, `touch`, `mouse`, `gamepad`. |
+On every push to `main`, `.github/workflows/folio.yml` tests and builds it with no secrets at all and keeps `dist/` as the `folio-site` artifact. The controller (a GitHub App and its own workflow) reads `folio.yaml` from that commit, checks the build, deploys it to its own Cloudflare Worker at `https://<name>.oztozlu.dev`, checks it answers, and lists it in Folio's catalogue. A file that doesn't fit, or a failed build, leaves the last good version online. Delete `folio.yaml`, archive or delete the repository, and the controller takes it down and out of Folio.
 
-A file that doesn't fit leaves only this game out of Folio, with a warning in Folio's build log.
+**On Folio**, `/play/<name>` runs it in a frame when the visitor asks, with *Full screen* and *Open in a new tab* (which also works without JavaScript). Folio adds `?folio=1&lang=en|tr&skin=graphite|paper|blueprint|terminal` to its address; `folioContext()` reads the language and the skin's colours, and `body.embedded` lets the game hide what Folio already shows. The frame allows its scripts, its own storage, full screen, downloads, file choosing and new tabs, and nothing of Folio itself; storage in the frame is kept apart from the game opened on its own.
 
-**In the frame**, Folio adds `?folio=1&lang=en|tr&skin=graphite|paper|blueprint|terminal` to the address; `folioContext()` reads it, and `body.embedded` hides the game's own full-screen button (Folio has one). The frame lets the game run its scripts, use its own storage, go full screen, open new tabs and download files. It can't navigate Folio or read anything of it. Storage in the frame is kept apart from the same game opened on its own.
+**Who may frame it**: `public/_headers` sets `frame-ancestors` (Folio, its Preview, a local Folio), and the controller's Worker adds the same rule if a build drops it. The same file locks it to its own origin: no inline scripts, no third-party requests.
 
-**Who may frame the game** is set in `public/_headers` (`frame-ancestors`): Folio, its Preview and a local Folio. The same file locks the game to its own origin (no inline scripts, no third-party requests); loosen it only for what the game really needs.
-
-## Deploy
-
-The game is static files served by Cloudflare (`wrangler.jsonc`, Workers static assets with the headers in `public/_headers`). `.github/workflows/deploy.yml` tests and builds every pull request, and deploys every push to `main`.
-
-Once per repository:
-
-1. Cloudflare → My Profile → API Tokens → a custom token with **Account · Workers Scripts · Edit** for your account only.
-2. GitHub → Settings → Environments → `production`, deployment branches limited to `main`, with the secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-3. Push to `main`. The address is `https://<name>.<your-subdomain>.workers.dev`; a custom domain can be added under `routes` in `wrangler.jsonc`.
-
-## Before adding the `folio-play` topic
+## Before publishing
 
 - It plays with each input listed in `folio.yaml`, and pauses when the tab is hidden.
 - It fits the frame at desktop and phone width, in both orientations it claims.
 - It works framed (`?folio=1`) and on its own, in each skin.
-- `pnpm test` and `pnpm build` pass.
+- `pnpm test` and `pnpm build` pass; the *Folio* workflow is green.

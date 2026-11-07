@@ -1,0 +1,12 @@
+# How the Folio controller publishes this repository: push to main and it builds, deploys and lists it on Folio.
+kind: play                  # play, lab or site
+access: public              # a game must be public to be listed on Folio
+# name: my-game             # its address, my-game.oztozlu.dev; by default the repository's name
+title: { en: Gates, tr: Kapılar }
+summary:
+  en: Steer through the gaps as the gates speed up.
+  tr: Kapılar hızlanırken aralarından geç.
+order: 1                    # earlier on /play than games without one; the rest newest first
+embed: true                 # false: Folio links to the game instead of running it in the page
+aspect: "16:10"             # the frame's shape on Folio
+inputs: [keyboard, touch, gamepad]
