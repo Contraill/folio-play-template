@@ -31,3 +31,11 @@ test('framed by Folio, the game takes the visitor language and skin; alone, the 
   assert.deepEqual(folioContext('', true, 'tr-TR'), { embedded: false, lang: 'tr', palette: PALETTES.graphite });
   assert.deepEqual(folioContext('?skin=unknown&lang=xx', false, 'en'), { embedded: false, lang: 'en', palette: PALETTES.paper });
 });
+
+test('storage is named after the app\'s place in Folio, so two apps on the site never share it', async () => {
+  const { namespace } = await import('../src/engine/folio.ts');
+  assert.equal(namespace('/play/gates/app/'), 'play:gates:');
+  assert.equal(namespace('/lab/two-spirals/app/index.html'), 'lab:two-spirals:');
+  assert.equal(namespace('/'), '', 'opened anywhere else (vite dev): no prefix');
+  assert.equal(namespace('/play/Gates/app/'), '');
+});
