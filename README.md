@@ -38,7 +38,7 @@ A push is usually live on the Folio Preview within about five minutes (build abo
 **If something goes wrong**, the last good version stays where it is:
 
 - a failed test or build: nothing is published; the next push tries again;
-- a build the controller refuses: the repository is marked as failing on the controller's status page and in its run log, with the reason, and the controller tries again after 10, 20, 40, 80 and 160 minutes (a new commit starts over);
+- a build the controller refuses: the repository is marked as failing in the controller's run log, with the reason, and the controller tries again after 10, 20, 40, 80 and 160 minutes (a new commit starts over);
 - Folio can't fetch or verify the build: that one game is left out of Folio's build, with a warning, and everything else is published.
 
 **Going back**: revert the commit and push; the controller publishes the reverted build like any other. There is no separate "roll back this game" button.
@@ -79,7 +79,7 @@ Folio adds `?folio=1&lang=en|tr&skin=graphite|paper|blueprint|terminal` to the g
 The game is Folio's own files, so it shares Folio's origin (`oztozlu.dev`):
 
 - **Storage**: `load` / `save` (`src/engine/storage.ts`) prefix every key with `play:<name>:` (`namespace()` in `src/engine/folio.ts`), so two games never overwrite each other. What it saves is the same in the frame and in its own tab.
-- **Frame**: `sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads allow-popups allow-popups-to-escape-sandbox"`, with `allow="fullscreen; gamepad; autoplay; clipboard-write"`. Because the game has Folio's origin, the sandbox is **not a security boundary**: a game's script could reach Folio's page. That is acceptable only because every game is the owner's own repository, built by its own workflow and checked by the controller. Treat a game's dependencies as part of Folio.
+- **Frame**: `sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"`, with `allow="fullscreen; gamepad; autoplay"`; no pop-ups. Because the game has Folio's origin, the sandbox is **not a security boundary**: a game's script could reach Folio's page. Opened in a new tab, it has no sandbox at all. That is acceptable only because every game is the owner's own repository (never a fork), built by its own workflow and checked by the controller; the check proves the files are the ones that workflow built, not that its code is safe. Treat a game's dependencies as part of Folio.
 - **Policy** that Folio sends with every file of the game: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'self'`. No third-party scripts, styles, fonts or requests; WebAssembly is allowed; only Folio may frame it. Its pages carry `noindex` (Folio's page is the one to find).
 - **Files**: `index.html` is served without caching, files whose name carries a content hash (`assets/index-3f9a1c2b.js`) for a year. An address under `/play/<name>/app/` that isn't a file and has no extension gets the game's page, with a `<base>` pointing at `/play/<name>/app/` (for single-page routing). `/play/<name>/app` without the slash redirects to it.
 
